@@ -10,6 +10,9 @@ packages:
 - loggregator
 - syslog_aggregator
 properties:
+  job:
+    description: Name of the job used for syslog messages
+    default: "loggregator"
   syslog_aggregator:
     description:
   loggregator.debug:
