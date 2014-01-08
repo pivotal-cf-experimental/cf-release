@@ -1,4 +1,4 @@
-<% if properties.syslog_aggregator && properties.syslog_aggregator.address %>
+<% if_p("syslog_aggregator.address", "syslog_aggregator.port") do |address, port| %>
 $ModLoad omrelp
 $ModLoad imuxsock                       # local message reception (rsyslog uses a datagram socket)
 $MaxMessageSize 4k                      # default is 2k
@@ -21,13 +21,13 @@ template(name="CfLogTemplate" type="list") {
         property(name="pri")
         constant(value=">")
         property(name="timestamp" dateFormat="rfc3339")
-        constant(value=" <%= ip %> ")
+        constant(value=" <%= ip.strip %> ")
         property(name="programname")
-        constant(" [job=<% properties.job %> index=<% spec.index %>] ")
+        constant(value=" [job=loggregator index=<%= spec.index.to_i %>] ")
         property(name="msg")
 }
 
-:programname, startswith, "vcap." :omrelp:<%= properties.syslog_aggregator.address %>:<%= properties.syslog_aggregator.port %>;CfLogTemplate
+:programname, startswith, "vcap." :omrelp:<%= address %>:<%= port %>;CfLogTemplate
 
 # Log vcap messages locally, too
 #$template VcapComponentLogFile, "/var/log/%programname:6:$%/%programname:6:$%.log"
