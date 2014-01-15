@@ -90,7 +90,7 @@ echo "Running persistent app test..."
 echo "Apps before:"
 gcf apps
 
-CF_COLOR=false CONFIG=$CI/$TARGET_ENV/integration_config.json \
+CF_COLOR=false \
   ./bin/test -nodes=$NODES -focus="An application that's already been pushed" \
   || EXITSTATUS=$?
 
