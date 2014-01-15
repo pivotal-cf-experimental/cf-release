@@ -90,7 +90,9 @@ echo "Running persistent app test..."
 echo "Apps before:"
 gcf apps
 
-CF_COLOR=false \
+echo '{}' > integration_config.json
+
+CF_COLOR=false CONFIG=integration_config.json \
   ./bin/test -nodes=$NODES -focus="An application that's already been pushed" \
   || EXITSTATUS=$?
 
@@ -107,7 +109,7 @@ gcf target -o $CF_ORG -s $CF_SPACE
 echo "Apps before:"
 gcf apps
 
-CF_COLOR=false CONFIG=$CI/$TARGET_ENV/integration_config.json \
+CF_COLOR=false CONFIG=integration_config.json \
   ./bin/test -nodes=$NODES -skip="An application that's already been pushed|An application using an admin buildpack" \
   || EXITSTATUS=$?
 
