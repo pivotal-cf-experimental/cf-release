@@ -84,6 +84,7 @@ if [ -d "$pcfe_dir/cf-acceptance-tests" ]; then
 else
     cd $pcfe_dir && git clone https://github.com/pivotal-cf-experimental/cf-acceptance-tests
 fi
+cd $CATS_BASE_DIR
 )
 
 export CF_VERBOSE_OUTPUT=true
