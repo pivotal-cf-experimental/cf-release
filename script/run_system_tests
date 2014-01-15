@@ -1,0 +1,121 @@
+#!/bin/bash -l
+# vim :ft=bash:
+
+# Depends on the following environment variables:
+# ADMIN_USER: email address for admin user
+# ADMIN_PASSWORD: password for admin user
+# CF_USER: email address for normal user
+# CF_USER_PASSWORD: password for normal user
+# CF_ORG: name of organization to use for tests
+# CF_SPACE: name of space to use for tests
+# API_ENDPOINT: URL for API server, e.g. https://api.example.com
+# TARGET_ENV: The target environment, e.g. a1, tabasco, onion, etc.
+# NODES: how many parallel nodes to use
+
+set -e -x
+
+CI=$(cd $(dirname $0)/.. && pwd)
+CATS_BASE_DIR=${1:-$PWD}
+
+function install_go_cli {
+  echo "--- Installing Go CLI"
+
+  mkdir -p "$1"
+
+  if uname | grep Darwin; then
+    cli=http://go-cli.s3.amazonaws.com/gcf-darwin-amd64.tgz
+  else
+    cli=http://go-cli.s3.amazonaws.com/gcf-linux-amd64.tgz
+  fi
+
+  curl -L "$cli" | tar xzf - -C "$1"
+
+  echo "--- Installed Go CLI $($1/gcf --version)"
+}
+
+# isolate builds from each other
+# prevents shared chruby state, shared cf state, etc.
+if [ -n "$WORKSPACE" ]; then
+  export HOME="$WORKSPACE"
+fi
+
+export PATH=$HOME/bin:$PATH
+install_go_cli $HOME/bin
+
+export COLUMNS=120
+
+export NODES=${NODES:-20}
+
+export CF_TRACE_BASENAME=$CATS_BASE_DIR/cf_trace_
+export CF_TRACE=$CATS_BASE_DIR/cf_trace.txt
+
+# clear out the trace from the previous build
+rm -f ${CF_TRACE_BASENAME}* $CF_TRACE
+
+gcf api $API_ENDPOINT
+
+# annoying workaround as regular users can't create a space and use it
+gcf auth $ADMIN_USER $ADMIN_PASSWORD
+
+gcf create-user $CF_USER $CF_USER_PASSWORD || true
+
+gcf create-org $CF_ORG
+gcf set-quota $CF_ORG runaway
+gcf target -o $CF_ORG
+gcf create-space $CF_SPACE
+gcf set-space-role $CF_USER $CF_ORG $CF_SPACE SpaceDeveloper
+gcf set-space-role $CF_USER $CF_ORG $CF_SPACE SpaceManager
+gcf set-space-role $CF_USER $CF_ORG $CF_SPACE SpaceAuditor
+gcf create-space persistent-space
+gcf set-space-role $CF_USER $CF_ORG persistent-space SpaceDeveloper
+gcf set-space-role $CF_USER $CF_ORG persistent-space SpaceManager
+gcf set-space-role $CF_USER $CF_ORG persistent-space SpaceAuditor
+
+export GOPATH=$CATS_BASE_DIR/gospace
+export PATH=$GOPATH/bin:$PATH
+
+cd $GOPATH/src/github.com/pivotal-cf-experimental/cf-acceptance-tests
+
+export CF_VERBOSE_OUTPUT=true
+
+gcf auth $CF_USER $CF_USER_PASSWORD
+gcf target -o $CF_ORG -s persistent-space
+
+EXITSTATUS=0
+
+echo "Running persistent app test..."
+
+echo "Apps before:"
+gcf apps
+
+CF_COLOR=false CONFIG=$CI/$TARGET_ENV/integration_config.json \
+  ./bin/test -nodes=$NODES -focus="An application that's already been pushed" \
+  || EXITSTATUS=$?
+
+echo "Apps after:"
+gcf apps
+
+echo "Done running; exit status: $EXITSTATUS"
+
+echo "Running the rest of the tests..."
+
+gcf auth $CF_USER $CF_USER_PASSWORD
+gcf target -o $CF_ORG -s $CF_SPACE
+
+echo "Apps before:"
+gcf apps
+
+CF_COLOR=false CONFIG=$CI/$TARGET_ENV/integration_config.json \
+  ./bin/test -nodes=$NODES -skip="An application that's already been pushed|An application using an admin buildpack" \
+  || EXITSTATUS=$?
+
+echo "Apps after:"
+gcf apps
+
+echo "Done running; exit status: $EXITSTATUS"
+
+echo "Cleaning up space..."
+gcf auth $ADMIN_USER $ADMIN_PASSWORD
+time gcf delete-space $CF_SPACE -f
+
+exit $EXITSTATUS
