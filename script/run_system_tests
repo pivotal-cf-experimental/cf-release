@@ -92,7 +92,7 @@ gcf apps
 
 echo '{}' > integration_config.json
 
-CF_COLOR=false CONFIG=integration_config.json \
+CF_COLOR=false CONFIG=$PWD/integration_config.json \
   ./bin/test -nodes=$NODES -focus="An application that's already been pushed" \
   || EXITSTATUS=$?
 
@@ -109,7 +109,7 @@ gcf target -o $CF_ORG -s $CF_SPACE
 echo "Apps before:"
 gcf apps
 
-CF_COLOR=false CONFIG=integration_config.json \
+CF_COLOR=false CONFIG=$PWD/integration_config.json \
   ./bin/test -nodes=$NODES -skip="An application that's already been pushed|An application using an admin buildpack" \
   || EXITSTATUS=$?
 
