@@ -30,6 +30,7 @@ function install_go_cli {
 
   curl -L "$cli" | tar xzf - -C "$1"
 
+  mv "$1/gcf-*amd64" "$1/gcf"
   echo "--- Installed Go CLI $($1/gcf --version)"
 }
 
