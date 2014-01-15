@@ -60,7 +60,7 @@ gcf auth $ADMIN_USER $ADMIN_PASSWORD
 gcf create-user $CF_USER $CF_USER_PASSWORD || true
 
 gcf create-org $CF_ORG
-gcf set-quota $CF_ORG runaway
+gcf set-quota $CF_ORG default
 gcf target -o $CF_ORG
 gcf create-space $CF_SPACE
 gcf set-space-role $CF_USER $CF_ORG $CF_SPACE SpaceDeveloper
