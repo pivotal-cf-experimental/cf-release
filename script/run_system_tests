@@ -75,7 +75,7 @@ export GOPATH=$CATS_BASE_DIR/gospace
 mkdir -p "$GOPATH"
 export PATH=$GOPATH/bin:$PATH
 
-go get github.com/pivotal-cf-experimental/cf-acceptance-tests
+go get -d github.com/pivotal-cf-experimental/cf-acceptance-tests
 cd $GOPATH/src/github.com/pivotal-cf-experimental/cf-acceptance-tests
 
 export CF_VERBOSE_OUTPUT=true
