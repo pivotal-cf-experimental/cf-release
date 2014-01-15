@@ -75,8 +75,16 @@ export GOPATH=$CATS_BASE_DIR/gospace
 mkdir -p "$GOPATH"
 export PATH=$GOPATH/bin:$PATH
 
-go get -d github.com/pivotal-cf-experimental/cf-acceptance-tests
-cd $GOPATH/src/github.com/pivotal-cf-experimental/cf-acceptance-tests
+pcfe_dir="$GOPATH/github.com/pivotal-cf-experimental"
+mkdir -p $pcfe_dir
+(
+set -e -x
+if [ -d "$pcfe_dir/cf-acceptance-tests" ]; then
+    cd $pcfe_dir/cf-acceptance-tests && git pull
+else
+    cd $pcfe_dir && git clone https://github.com/pivotal-cf-experimental/cf-acceptance-tests
+fi
+)
 
 export CF_VERBOSE_OUTPUT=true
 
