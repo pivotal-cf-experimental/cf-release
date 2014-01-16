@@ -90,7 +90,7 @@ echo "Running persistent app test..."
 echo "Apps before:"
 gcf apps
 
-echo '{}' > integration_config.json
+echo '{"apps_domain": "10.244.0.34.xip.io"}' > integration_config.json
 
 CF_COLOR=false CONFIG=$PWD/integration_config.json \
   ./bin/test -nodes=$NODES -focus="An application that's already been pushed" \
